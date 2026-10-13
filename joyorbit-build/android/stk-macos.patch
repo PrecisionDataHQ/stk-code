@@ -1,0 +1,352 @@
+--- a/android/make_deps.sh
++++ b/android/make_deps.sh
+@@ -54,8 +54,8 @@
+     exit
+ fi
+ 
+-export NDK_TOOLCHAIN_PATH="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin"
+-export NDK_SYSROOT="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
++export NDK_TOOLCHAIN_PATH="$NDK_PATH/toolchains/llvm/prebuilt/darwin-x86_64/bin"
++export NDK_SYSROOT="$NDK_PATH/toolchains/llvm/prebuilt/darwin-x86_64/sysroot"
+ export PATH="$NDK_TOOLCHAIN_PATH:$PATH"
+ 
+ build_deps()
+@@ -95,7 +95,7 @@
+         cd "$DIRNAME/deps-$ARCH_OPTION/zlib"
+         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+                 -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS=" -Wl,--undefined-version -fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/zlib.stamp"
+     fi
+@@ -115,7 +115,7 @@
+                 -DZLIB_INCLUDE_DIR="$DIRNAME/deps-$ARCH_OPTION/zlib/"         \
+                 -DM_LIBRARY="$MLIBRARY"                                       \
+                 -DPNG_TESTS=0 -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/libpng.stamp"
+     fi
+@@ -135,7 +135,7 @@
+                  -DFT_WITH_HARFBUZZ=OFF -DFT_WITH_BZIP2=OFF                    \
+                  -DFT_WITH_BROTLI=OFF -DFT_WITH_ZLIB=ON -DFT_WITH_PNG=ON       \
+                  -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         # We need to rebuild freetype after harfbuzz is compiled
+         touch "$DIRNAME/deps-$ARCH_OPTION/freetype_bootstrap.stamp"
+@@ -155,7 +155,7 @@
+                  -DHB_HAVE_GLIB=OFF -DHB_HAVE_GOBJECT=OFF -DHB_HAVE_ICU=OFF       \
+                  -DHB_HAVE_FREETYPE=ON -DHB_BUILD_SUBSET=OFF                      \
+                  -DCMAKE_C_FLAGS="-fpic -O3 -g" -DCMAKE_CXX_FLAGS="-std=gnu++0x -fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         mkdir -p "$DIRNAME/deps-$ARCH_OPTION/harfbuzz/include/harfbuzz"
+         cp $DIRNAME/deps-$ARCH_OPTION/harfbuzz/src/*.h "$DIRNAME/deps-$ARCH_OPTION/harfbuzz/include/harfbuzz"
+@@ -178,7 +178,7 @@
+                  -DFT_WITH_HARFBUZZ=ON -DFT_WITH_BZIP2=OFF                     \
+                  -DFT_WITH_BROTLI=OFF -DFT_WITH_ZLIB=ON -DFT_WITH_PNG=ON       \
+                  -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/freetype.stamp"
+     fi
+@@ -196,7 +196,7 @@
+                 -DOPENSL_INCLUDE_DIR="$NDK_SYSROOT/usr/include/SLES/"           \
+                 -DOPENSL_ANDROID_INCLUDE_DIR="$NDK_SYSROOT/usr/include/SLES/"   \
+                 -DCMAKE_C_FLAGS="-fpic -O3 -g" -DCMAKE_CXX_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/openal.stamp"
+     fi
+@@ -207,7 +207,7 @@
+         mkdir -p "$DIRNAME/deps-$ARCH_OPTION/mbedtls"
+         cp -a -f "$DIRNAME/../lib/mbedtls/"* "$DIRNAME/deps-$ARCH_OPTION/mbedtls"
+         if [ "$ARCH_OPTION" = "x86" ]; then
+-            sed -i 's/#define MBEDTLS_AESNI_C//g' "$DIRNAME/deps-$ARCH_OPTION/mbedtls/include/mbedtls/mbedtls_config.h"
++            sed -i.bak 's/#define MBEDTLS_AESNI_C//g' "$DIRNAME/deps-$ARCH_OPTION/mbedtls/include/mbedtls/mbedtls_config.h"
+         fi
+ 
+         cd "$DIRNAME/deps-$ARCH_OPTION/mbedtls"
+@@ -215,7 +215,7 @@
+                 -DHOST=$HOST -DARCH=$ARCH -DBUILD_SHARED_LIBS=OFF             \
+                 -DENABLE_TESTING=OFF -DENABLE_PROGRAMS=OFF                    \
+                 -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/mbedtls.stamp"
+     fi
+@@ -236,12 +236,12 @@
+                 -DMBEDX509_LIBRARY="$DIRNAME/deps-$ARCH_OPTION/mbedtls/library/libmbedx509.a"     \
+                 -DMBEDTLS_INCLUDE_DIRS="$DIRNAME/deps-$ARCH_OPTION/mbedtls/include/"              \
+                 -DBUILD_TESTING=OFF -DBUILD_CURL_EXE=OFF                      \
+-                -DCURL_USE_MBEDTLS=ON -DUSE_ZLIB=ON -DCURL_USE_OPENSSL=OFF    \
++                -DCURL_USE_MBEDTLS=ON -DCURL_USE_LIBPSL=OFF -DUSE_ZLIB=ON -DCURL_USE_OPENSSL=OFF    \
+                 -DCURL_USE_LIBSSH=OFF -DCURL_USE_LIBSSH2=OFF                  \
+                 -DCURL_USE_GSSAPI=OFF -DUSE_NGHTTP2=OFF -DUSE_QUICHE=OFF      \
+                 -DHTTP_ONLY=ON -DCURL_CA_BUNDLE=none -DCURL_CA_PATH=none      \
+                 -DENABLE_THREADED_RESOLVER=ON -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/curl.stamp"
+     fi
+@@ -255,7 +255,7 @@
+         cd "$DIRNAME/deps-$ARCH_OPTION/libjpeg"
+         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+                 -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/libjpeg.stamp"
+     fi
+@@ -269,7 +269,7 @@
+         cd "$DIRNAME/deps-$ARCH_OPTION/libogg"
+         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+                 -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/libogg.stamp"
+     fi
+@@ -282,10 +282,10 @@
+ 
+         cd "$DIRNAME/deps-$ARCH_OPTION/libvorbis"
+         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+-                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
++                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
+                 -DOGG_LIBRARY="$DIRNAME/deps-$ARCH_OPTION/libogg/libogg.a"    \
+                 -DOGG_INCLUDE_DIR="$DIRNAME/deps-$ARCH_OPTION/libogg/include" &&
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/libvorbis.stamp"
+     fi
+@@ -306,14 +306,14 @@
+         
+         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake  \
+                 -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3"          \
+-                -DCMAKE_CXX_FLAGS="-fpic -O3" -DSHADERC_SKIP_INSTALL=1         \
++                -DCMAKE_CXX_FLAGS="-fpic -O3" -DSHADERC_SKIP_INSTALL=1 -DCMAKE_SKIP_INSTALL_RULES=ON         \
+                 -DCMAKE_BUILD_TYPE=Release                                     \
+                 -DSHADERC_SKIP_TESTS=1 -DSHADERC_SKIP_EXAMPLES=1               \
+                 -DSPIRV_HEADERS_SKIP_INSTALL=1 -DSPIRV_HEADERS_SKIP_EXAMPLES=1 \
+-                -DSKIP_SPIRV_TOOLS_INSTALL=1 -DSPIRV_SKIP_TESTS=1              \
++                -DSKIP_SPIRV_TOOLS_INSTALL=0 -DSPIRV_SKIP_TESTS=1              \
+                 -DSPIRV_SKIP_EXECUTABLES=1 -DENABLE_GLSLANG_BINARIES=0         \
+-                -DENABLE_CTEST=0 &&
+-        make -j $(($(nproc) + 1))
++                -DENABLE_CTEST=0 -DGLSLANG_ENABLE_INSTALL=OFF &&
++        make -j 6
+         # Strip debug symbol to make app bundle smaller
+         llvm-strip --strip-debug "$DIRNAME/deps-$ARCH_OPTION/shaderc/libshaderc/libshaderc_combined.a"
+         check_error
+@@ -334,10 +334,10 @@
+                     -DCMAKE_CXX_FLAGS="-fpic -O3 -g -DSQUISH_USE_SSE=2 -msse2"
+         else
+             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
++                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
+                     -DCMAKE_CXX_FLAGS="-fpic -O3 -g"
+         fi
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/libsquish.stamp"
+     fi
+@@ -349,8 +349,8 @@
+         cp -a -f "$DIRNAME/../lib/astc-encoder/"* "$DIRNAME/deps-$ARCH_OPTION/astc-encoder"
+ 
+         cd "$DIRNAME/deps-$ARCH_OPTION/astc-encoder"
+-        sed -i '/-Werror/d' Source/cmake_core.cmake
+-        sed -i 's|${ASTCENC_TARGET}-static|astcenc|g' Source/cmake_core.cmake
++        sed -i.bak '/-Werror/d' Source/cmake_core.cmake
++        sed -i.bak 's|${ASTCENC_TARGET}-static|astcenc|g' Source/cmake_core.cmake
+         if [ "$ARCH_OPTION" = "armeabi-v7a" ]; then
+             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+                     -DHOST=$HOST -DARCH=$ARCH -DSTK_ARM_NEON=ON                   \
+@@ -359,19 +359,19 @@
+                     -DASTCENC_INVARIANCE=OFF -DASTCENC_CLI=OFF
+         elif [ "$ARCH_OPTION" = "arm64-v8a" ]; then
+             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
++                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
+                     -DCMAKE_CXX_FLAGS="-fpic -O3 -g"                              \
+                     -DASTCENC_ISA_NEON=ON -DASTCENC_INVARIANCE=OFF -DASTCENC_CLI=OFF
+         else
+             if [ "$ARCH_OPTION" = "x86" ]; then
+-                sed -i 's/_mm_popcnt_u64/__builtin_popcountll/g' Source/astcenc_vecmathlib_sse_4.h
++                sed -i.bak 's/_mm_popcnt_u64/__builtin_popcountll/g' Source/astcenc_vecmathlib_sse_4.h
+             fi
+             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
++                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
+                     -DCMAKE_CXX_FLAGS="-fpic -O3 -g"                              \
+                     -DASTCENC_ISA_SSE41=ON -DASTCENC_INVARIANCE=OFF -DASTCENC_CLI=OFF
+         fi
+-        make -j $(($(nproc) + 1))
++        make -j 6
+         check_error
+         touch "$DIRNAME/deps-$ARCH_OPTION/astc-encoder.stamp"
+     fi
+@@ -382,22 +382,23 @@
+             echo "Compiling $ARCH_OPTION libadrenotools"
+             mkdir -p "$DIRNAME/deps-$ARCH_OPTION/libadrenotools"
+             mkdir -p "$DIRNAME/mesa/arm64-v8a"
+-            git clone "$DIRNAME/../lib/libadrenotools" "$DIRNAME/deps-$ARCH_OPTION/libadrenotools"
++            cp -a -f "$DIRNAME/../lib/libadrenotools/." "$DIRNAME/deps-$ARCH_OPTION/libadrenotools/"
+ 
+             cd "$DIRNAME/deps-$ARCH_OPTION/libadrenotools"
+-            git submodule update --init
+-            cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
+-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
++            git clone https://github.com/bylaws/liblinkernsbypass "$DIRNAME/deps-$ARCH_OPTION/libadrenotools/lib/linkernsbypass"
++            git -C "$DIRNAME/deps-$ARCH_OPTION/libadrenotools/lib/linkernsbypass" checkout aa3975893d83ef1bc84c321ec60c65fbf1287887
++            cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
++                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
+                     -DCMAKE_CXX_FLAGS="-fpic -O3 -g"                              \
+                     -DCMAKE_SHARED_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
+-            make -j $(($(nproc) + 1))
++            make -j 6
+             check_error
+             cp "$DIRNAME/deps-$ARCH_OPTION/libadrenotools/src/hook/libhook_impl.so" "$DIRNAME/mesa/arm64-v8a"
+             cp "$DIRNAME/deps-$ARCH_OPTION/libadrenotools/src/hook/libmain_hook.so" "$DIRNAME/mesa/arm64-v8a"
+             touch "$DIRNAME/deps-$ARCH_OPTION/libadrenotools.stamp"
+         fi
+ 
+-        if [ ! -f "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp" ]; then
++        if false; then
+             echo "Compiling $ARCH_OPTION mesa"
+             mkdir -p "$DIRNAME/deps-$ARCH_OPTION/mesa"
+             cp -a -f "$DIRNAME/../lib/mesa/"* "$DIRNAME/deps-$ARCH_OPTION/mesa"
+@@ -408,9 +409,9 @@
+ ndk_path = '$NDK_PATH'
+ 
+ [binaries]
+-ar = ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar'
+-c = ['ccache', ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang']
+-cpp = ['ccache', ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++', '-Wno-c++11-narrowing']
++ar = ndk_path / 'toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar'
++c = ['ccache', ndk_path / 'toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android26-clang']
++cpp = ['ccache', ndk_path / 'toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android26-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++', '-Wno-c++11-narrowing']
+ c_ld = 'lld'
+ cpp_ld = 'lld'
+ 
+@@ -422,7 +423,7 @@
+ # interacting with the panfrost DRM module and not kbase
+ pkg-config = ['env', 'PKG_CONFIG_LIBDIR=.:/tmp/drm-static/lib/pkgconfig', '/usr/bin/pkg-config']
+ 
+-strip = [ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip', '-s']
++strip = [ndk_path / 'toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android-strip', '-s']
+ 
+ [host_machine]
+ system = 'android'
+@@ -430,9 +431,9 @@
+ cpu = 'armv8'
+ endian = 'little'
+ EOF
+-            sed -i 's/dep_libarchive = dependency(.*/dep_libarchive = null_dep/' src/freedreno/meson.build
+-            sed -i 's/dep_libxml2 = dependency(.*/dep_libxml2 = null_dep/' src/freedreno/meson.build
+-            sed -i 's/#elif DETECT_OS_ANDROID && !defined(__cplusplus)/#elif 0/' src/util/perf/cpu_trace.h
++            sed -i.bak 's/dep_libarchive = dependency(.*/dep_libarchive = null_dep/' src/freedreno/meson.build
++            sed -i.bak 's/dep_libxml2 = dependency(.*/dep_libxml2 = null_dep/' src/freedreno/meson.build
++            sed -i.bak 's/#elif DETECT_OS_ANDROID && !defined(__cplusplus)/#elif 0/' src/util/perf/cpu_trace.h
+             meson setup build --cross-file crossfile \
+                 -Dbuildtype=release \
+                 -Dplatforms=android \
+--- a/android/make.sh
++++ b/android/make.sh
+@@ -13,7 +13,7 @@
+ export NDK_BUILD_SCRIPT="$DIRNAME/Android.mk"
+ 
+ #export NDK_CCACHE=ccache
+-export CPU_CORE="-j$(($(nproc) + 1))"
++export CPU_CORE="-j6"
+ 
+ if [ -z "$STK_MIN_ANDROID_SDK" ]; then
+     export STK_MIN_ANDROID_SDK=21
+@@ -43,9 +43,9 @@
+ export APP_ICON_ADAPTIVE_BG_BETA="$DIRNAME/icon_adaptive_bg-dbg.png"
+ export APP_ICON_ADAPTIVE_FG_BETA="$DIRNAME/icon_adaptive_fg-dbg.png"
+ 
+-export APP_NAME_DEBUG="SuperTuxKart Debug"
+-export PACKAGE_NAME_DEBUG="org.supertuxkart.stk_dbg"
+-export PACKAGE_CLASS_NAME_DEBUG="org/supertuxkart/stk_dbg"
++export APP_NAME_DEBUG="JoyOrbit Kart"
++export PACKAGE_NAME_DEBUG="io.precisiondata.joyorbit.kart"
++export PACKAGE_CLASS_NAME_DEBUG="io/precisiondata/joyorbit/kart"
+ export APP_DIR_NAME_DEBUG="supertuxkart-dbg"
+ export APP_ICON_DEBUG="$DIRNAME/icon-dbg.png"
+ export APP_ICON_ADAPTIVE_BG_DEBUG="$DIRNAME/icon_adaptive_bg-dbg.png"
+@@ -376,22 +376,22 @@
+ echo "    <foreground android:drawable=\"@drawable/icon_fg\" />"       >> "$ADAPTIVE_ICON_FILE"
+ echo "</adaptive-icon>"                                                >> "$ADAPTIVE_ICON_FILE"
+ 
+-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
++sed -i.bak "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+        "$DIRNAME/src/main/java/STKEditText.java"
+ 
+-sed -i "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKInputConnection;/g" \
++sed -i.bak "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKInputConnection;/g" \
+        "$DIRNAME/src/main/java/STKEditText.java"
+ 
+-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
++sed -i.bak "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+        "$DIRNAME/src/main/java/STKInputConnection.java"
+ 
+-sed -i "s/import org.supertuxkart.*.STKEditText;/import $PACKAGE_NAME.STKEditText;/g" \
++sed -i.bak "s/import org.supertuxkart.*.STKEditText;/import $PACKAGE_NAME.STKEditText;/g" \
+        "$DIRNAME/src/main/java/STKInputConnection.java"
+ 
+-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
++sed -i.bak "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
+ 
+-sed -i "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKEditText;/g" \
++sed -i.bak "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKEditText;/g" \
+        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
+ 
+ cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDevice.java" \
+--- a/android/Android.mk
++++ b/android/Android.mk
+@@ -271,7 +271,7 @@
+ LOCAL_CFLAGS       := -I../lib/irrlicht/source/Irrlicht/ \
+                       -I../lib/irrlicht/include/         \
+                       -I../src                           \
+-                      -Ideps-$(TARGET_ARCH_ABI)/libjpeg/ \
++                      -Ideps-$(TARGET_ARCH_ABI)/libjpeg/src -Ideps-$(TARGET_ARCH_ABI)/libjpeg/ \
+                       -Ideps-$(TARGET_ARCH_ABI)/libpng/  \
+                       -Ideps-$(TARGET_ARCH_ABI)/zlib/    \
+                       -I../lib/sdl2/include/             \
+--- a/lib/graphics_engine/src/ge_compressor_astc_4x4.cpp
++++ b/lib/graphics_engine/src/ge_compressor_astc_4x4.cpp
+@@ -50,7 +50,7 @@
+     for (unsigned i = 0; i < GEVulkanCommandLoader::getLoaderCount(); i++)
+     {
+         astcenc_context* context = NULL;
+-        if (astcenc_context_alloc(&cfg, 1, &context) != ASTCENC_SUCCESS)
++        if (astcenc_context_alloc(&cfg, 1, &context, NULL) != ASTCENC_SUCCESS)
+         {
+             destroy();
+             return;
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -2040,6 +2040,11 @@
+ //=============================================================================
+ void askForInternetPermission()
+ {
++#ifdef ANDROID
++    // JoyOrbit bundles a complete offline game and grants no Internet permission.
++    UserConfigParams::m_internet_status = Online::RequestManager::IPERM_NOT_ALLOWED;
++    return;
++#endif
+     if (UserConfigParams::m_internet_status !=
+         Online::RequestManager::IPERM_NOT_ASKED)
+         return;
